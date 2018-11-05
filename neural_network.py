@@ -1,14 +1,6 @@
-import unittest
 import random
-import math
 import numpy as np
-
 import matplotlib.pyplot as plt
-
-from sklearn.metrics import precision_score,recall_score
-
-import pandas as pd
-
 
 
 class SigmoidNeuron:
@@ -110,49 +102,6 @@ class NeuralNetwork:
 		#print("expected_output  ",expected_output)
 		#print("output           ",output)
 
-		error=[]
-		delta=[]
-		deltam=[]
-
-		for i,n in enumerate(output_layer.neurons):
-			e=(expected_output[i] - output[i])
-			d = e*(output[i] * (1.0 - output[i]))
-			error.append(e)
-			delta.append(d)
-
-		deltam.append(delta)
-
-		for i in range(2,n_layers+1):
-			il = n_layers -i
-			inl = n_layers -i +1
-
-			ndelta= delta
-			delta = []
-			l = self.layers[il]
-			nl = self.layers[inl]
-			loutput = outputs[il]
-			nweight = nl.get_weight()
-
-			for i, n in enumerate(l.neurons):
-				e = 0.0
-				for j,w in enumerate(nweight) :
-					for w in nweight[j]:
-						e += w * ndelta[j]
-				d = e * (loutput[i] * (1.0 - loutput[i]))
-				error.append(e)
-				delta.append(d)
-			deltam.append(delta)
-
-		return deltam[::-1]
-
-
-	def error_backpropagation2(self, outputs, expected_output):
-		n_layers = self.layers.__len__()
-		output = outputs[outputs.__len__()-1]
-		output_layer = self.layers[n_layers-1]
-
-		#print("expected_output  ",expected_output)
-		#print("output           ",output)
 
 		error=[]
 		delta=[]
@@ -188,6 +137,8 @@ class NeuralNetwork:
 			deltam.append(delta)
 
 		return deltam[::-1]
+
+
 
 	def upgrade_wb(self, deltam, input, learn_rate, outputs):
 		for i,l in enumerate(self.layers):
