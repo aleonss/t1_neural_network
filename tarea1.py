@@ -1,12 +1,11 @@
 from neural_network import *
 
-from sklearn.metrics import precision_score,recall_score
 import pandas as pd
 
 
 def train_nn(nn,learn_rate, columns, results, df_train):
-	size = 250
-	success = 0.0
+	size = 200
+	error = 0.0
 	iters = 0
 
 	df_train = df_train.iloc[np.random.permutation(len(df_train))]
@@ -20,18 +19,14 @@ def train_nn(nn,learn_rate, columns, results, df_train):
 			real.append(row[r])
 		exp_out= real
 
-
 		res, outputs = nn.forward_feeding(input)
 		deltam = nn.error_backpropagation(outputs, exp_out)
 		nn.upgrade_wb(deltam, input, learn_rate, outputs)
 
-		#print((res[0] > 0.5)==real)
-
-		success += ((res[0] > 0.5)==real)
-
-		if (iters % size == 0):
-			ratio= (success/size)
-			success=0.0
+		error += abs(real -res[0])
+		if( (iters % size == 0) and (iters!=0) ):
+			ratio= (error/iters)
+			error=0.0
 			print(iters,"\t",ratio)
 		iters+=1
 
@@ -40,42 +35,59 @@ def train_nn(nn,learn_rate, columns, results, df_train):
 
 
 
+def binary_classifiers(real,pred):
+	tp = 0.0
+	fn = 0.0
+	fp = 0.0
+	tn = 0.0
+	for r,p in zip(real,pred):
+		if(r and p):
+			tp+=1
+		elif(r and (not p)):
+			fn+=1
+		elif((not r) and p):
+			fp+=1
+		elif((not r) and (not p)):
+			tn+=1
+	return tp,fn,fp,tn
+
+def get_performance(real, pred):
+	tp, fn, fp, tn = binary_classifiers(real,pred)
+	accuracy = (tp + tn) / (tp + tn + fp + fn)
+	if(tp==0):
+		precision = 0
+		recall = 0
+	else:
+		precision = tp / (tp + fp)
+		recall = tp / (tp + fn)
+
+	print("Accuracy: ", accuracy)
+	print("Precision:", precision )
+	print("Recall:   ", recall , "\n")
+	return accuracy,precision,recall
+
 
 
 def test_nn(nn, columns, results, df_test):
 
-
 	xreal=[]
 	xpred=[]
-	success = 0.0
 	df_test = df_test.iloc[np.random.permutation(len(df_test))]
 
 	for i, row in df_test.iterrows():
-		x = []
+		inputs = []
 		real = []
 		for c in columns:
-			x.append(row[c])
+			inputs.append(row[c])
 		for r in results:
 			real.append(row[r])
+		res, outputs = nn.forward_feeding(inputs)
 
-		res, outputs = nn.forward_feeding(x)
-
-		#for j,r in enumerate(res):
-		#	res[j]= r>0.5
-		success += (real[0]==1)==(res[0] > 0.5)
-		#print((real[0]==1)==(res[0] > 0.5))
-		#print("\t",real, res)
-		#print("\t",real[0]==1, res[0] > 0.5)
-		#print(res[0])
 		xreal.append(real[0]==1)
 		xpred.append(res[0] > 0.5 )
-		#print((real[0]==1),(res[0] > 0.5 ),)
 
-	print(xreal)
-	print(xpred)
-	print("precision:\t", precision_score(xreal, xpred, ))
-	print("recall:   \t", recall_score(xreal, xpred))
-	print("succ:   \t", (success/df_test.__len__()))
+	get_performance(xreal, xpred)
+
 
 
 
@@ -83,9 +95,18 @@ def test_nn(nn, columns, results, df_test):
 columns = ['Temperature', 'Humidity', 'Light', 'CO2', 'HumidityRatio','hour','minute']
 results = ['Occupancy',]
 
+n_input = columns.__len__()
+n_output = results.__len__()
+
 learn_rate = 0.55
-layers = make_layers([7,20,8,4,1])
+layers = make_layers([n_input,16,8,4,n_output])
 nn = NeuralNetwork(layers)
+
+'''
+data/datatraining.txt       #8144
+data/datatest.txt           #2666
+data/datatest2.txt          #9753
+'''
 
 df_train = pd.read_csv('data/datatraining.txt',)
 df_test1 = pd.read_csv('data/datatest.txt',)
@@ -102,14 +123,10 @@ df_train = datetime_to_time(df_train)
 df_test1 = datetime_to_time(df_test1)
 df_test2 = datetime_to_time(df_test2)
 
-#df_test1['time'] = datetime_to_int(df_test1['time'])
-#print(df_test1)
 
 nn = train_nn(nn,learn_rate, columns, results, df_test1)
-test_nn(nn, columns, results, df_test2)
 test_nn(nn, columns, results, df_train)
-
-
+test_nn(nn, columns, results, df_test2)
 
 
 
