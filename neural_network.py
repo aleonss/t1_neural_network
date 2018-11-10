@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 
 class SigmoidNeuron:
 
-	def __init__(self,w=[],b=0):
-		self.weights=w
-		self.bias=b
+	def __init__(self,weights=[],bias=0):
+		self.weights=weights
+		self.bias=bias
 
 	def mrand(self,n_input):
 		w = []
@@ -29,14 +29,14 @@ class SigmoidNeuron:
 		self.bias += (rate * delta)
 
 	def to_str(self):
-		res = "\tweights "+ self.weights.__str__()+"\n"
-		res += "\t\tbias "+ self.bias.__str__()+"\n"
+		res = "\tweights:\t"+ self.weights.__str__()+"\n"
+		res += "\t\tbias:\t"+ self.bias.__str__()+"\n"
 
 		return res
 
 
 class NeuronLayer:
-	def __init__(self,n_input,n_neurons):
+	def __init__(self,n_input=0,n_neurons=0):
 		neurons =[]
 		for i in range(0,n_neurons):
 			sn = SigmoidNeuron()
@@ -82,8 +82,19 @@ class NeuralNetwork:
 	def __init__(self,layers):
 		self.layers=layers
 
+	def feed(self,input):
+		res=[]
+		x = input
+		for i,l in enumerate(self.layers):
+			res = l.feed(x)
+			x = res
+		return res
+
+
+
 	def forward_feeding(self,input):
-		res = outputs =[]
+		res = []
+		outputs =[]
 		x = input
 		for i,l in enumerate(self.layers):
 			res = l.feed(x)
@@ -198,3 +209,44 @@ def plot_nn_2D(nn, n_input, x, title):
 
 	plt.title(title)
 	plt.show()
+
+
+
+
+def binary_classifiers(real,pred):
+	tp = 0.0
+	fn = 0.0
+	fp = 0.0
+	tn = 0.0
+	for r,p in zip(real,pred):
+		if(r and p):
+			tp+=1
+		elif(r and (not p)):
+			fn+=1
+		elif((not r) and p):
+			fp+=1
+		elif((not r) and (not p)):
+			tn+=1
+	return tp,fn,fp,tn
+
+
+def get_performance(real, pred):
+	tp, fn, fp, tn = binary_classifiers(real,pred)
+	accuracy = (tp + tn) / (tp + tn + fp + fn)
+
+	if(tp==0):
+		precision = 0
+		recall = 0
+	else:
+		precision = tp / (tp + fp)
+		recall = tp / (tp + fn)
+	print("Performance::")
+	print("\tAccuracy: ", accuracy)
+	print("\tPrecision:", precision )
+	print("\tRecall:   ", recall ,"\n" )
+	return accuracy,precision,recall
+
+
+
+
+
